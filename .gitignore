@@ -1,0 +1,10 @@
+# ignore all key files generated
+*.ppk
+*.pem
+
+#ignore terraform init data
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
