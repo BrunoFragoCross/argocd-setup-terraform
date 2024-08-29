@@ -33,7 +33,7 @@ resource "aws_key_pair" "amazon_linux_vm" {
 //to spit the private key for putty login
 resource "local_file" "private_key_pem" {
   content  = tls_private_key.generated.private_key_pem
-  filename = "secrets/privateKeyPem.pem"
+  filename = "${path.module}/secrets/privateKeyPem.pem"
 }
 
 resource "aws_instance" "linux_server" {
@@ -66,34 +66,28 @@ resource "aws_instance" "linux_server" {
     Name = "minikube"
   }
 
+  provisioner "file" {
+    source      = "${path.module}/scripts"
+    destination = "/home/ec2-user/"
+  }
+
+  provisioner "remote-exec" {//update linux and install docker
+    inline = [
+      "sudo dnf update -y;", 
+      "sudo dnf install docker -y;",
+      "sudo systemctl start docker;",
+      "sudo systemctl enable docker;",
+    ]
+  }
+
   /*provisioner "remote-exec" {
     inline = [
-      "sudo dnf update -y", //update linux
-      //docker block
-      "sudo dnf install docker -y",
-      "sudo systemctl start docker",
-      "sudo systemctl enable docker",
-      "sudo usermod -aG docker $USER && newgrp docker",
-      //k8s block
-      "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl",
-      "chmod +x kubectl",
-      "sudo mv kubectl /usr/local/bin/",
-      "kubectl version --client -o json",
-      //minikube block
-      "wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64",
-      "chmod +x minikube-linux-amd64",
-      "sudo mv minikube-linux-amd64 /usr/local/bin/minikube",
-      "minikube version",
-      "minikube start --driver=docker",
-      "minikube status",
-      //argoCD block
-      "kubectl create namespace argocd",
-      "kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml",
-      "curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64",
-      "sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd",
-      "rm argocd-linux-amd64"
+      "set -eu",
+      "sudo chmod +x /home/ec2-user/scripts/startup-main.sh",
+      "sudo /home/ec2-user/scripts/startup-main.sh",
     ]
   }*/
+  
 }
 
 //to let ssh access
@@ -102,7 +96,7 @@ resource "aws_security_group" "ingress-ssh" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "all_ports_open" {
-  security_group_id =  aws_security_group.ingress-ssh.id
+  security_group_id = aws_security_group.ingress-ssh.id
 
   cidr_ipv4   = "0.0.0.0/0"
   from_port   = -1
