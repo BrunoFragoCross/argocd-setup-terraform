@@ -71,22 +71,13 @@ resource "aws_instance" "linux_server" {
     destination = "/home/ec2-user/"
   }
 
-  provisioner "remote-exec" {//update linux and install docker
-    inline = [
-      "sudo dnf update -y;", 
-      "sudo dnf install docker -y;",
-      "sudo systemctl start docker;",
-      "sudo systemctl enable docker;",
-    ]
-  }
-
-  /*provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "set -eu",
       "sudo chmod +x /home/ec2-user/scripts/startup-main.sh",
       "sudo /home/ec2-user/scripts/startup-main.sh",
     ]
-  }*/
+  }
   
 }
 
